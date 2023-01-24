@@ -1,0 +1,26 @@
+FROM ruby:3.1.3
+
+LABEL maintainer="zachgrammon@gmail.com"
+
+# add latest versions of Node and Yarn
+RUN curl -fsSL https://deb.nodesource.com/setup_19.x | bash - \
+&& curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/yarn.gpg \
+&& echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+
+RUN apt-get update -y && apt-get install -yqq nodejs yarn
+
+# using /app directory for our project files
+RUN mkdir /app
+COPY Gemfile\* /app
+WORKDIR /app
+
+# copy files from our current directory to our container app directory
+COPY . /app
+
+# setting up a user with our server's UID and account name to match up permissions when running commands
+RUN useradd -u 1001 --create-home --home-dir /app --shell /bin/bash dev
+
+# using /gems directory to cache installed gems
+RUN mkdir /gems
+RUN chown dev:dev /gems
+ENV BUNDLE_PATH /gems
